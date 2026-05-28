@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>💊 保管账库存管理看板</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --bg: #EEF4FB;
+  --bg2: #E0EBF7;
+  --card: #FFFFFF;
+  --card2: #F5F9FF;
+  --border: rgba(21,88,167,0.10);
+  --accent: #1558A7;
+  --accent2: #1A75C9;
+  --accent-glow: rgba(21,88,167,0.18);
+  --green: #1A75C9;
+  --green-glow: rgba(26,117,201,0.15);
+  --orange: #E8821A;
+  --orange-glow: rgba(232,130,26,0.15);
+  --purple: #5B8FCC;
+  --purple-glow: rgba(91,143,204,0.15);
+  --text: #1A2B42;
+  --text2: #4A6180;
+  --text3: #8499B4;
+  --shadow: 0 8px 32px rgba(21,88,167,0.12);
+  --radius: 16px;
+  --radius-lg: 24px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== Background Mesh ===== */
+.bg-mesh {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(21,88,167,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 70%, rgba(26,117,201,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 50% 50%, rgba(91,143,204,0.05) 0%, transparent 70%);
+}
+
+/* ===== Grid Lines ===== */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(21,88,167,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(21,88,167,0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+}
+
+/* ===== Main Layout ===== */
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px 60px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== Header ===== */
+.header {
+  text-align: center;
+  margin-bottom: 48px;
+  width: 100%;
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(45,130,245,0.12);
+  border: 1px solid rgba(45,130,245,0.3);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  margin-bottom: 20px;
+}
+
+.header-badge .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.header h1 {
+  font-size: clamp(28px, 6vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #1A2B42 0%, #4A6180 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 12px;
+}
+
+.header h1 .highlight {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header p {
+  color: var(--text2);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ===== Device Tip ===== */
+.device-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(240,136,62,0.1);
+  border: 1px solid rgba(240,136,62,0.25);
+  color: var(--orange);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+/* ===== Cards Grid ===== */
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 600px) {
+  .cards-grid { grid-template-columns: 1fr; gap: 16px; }
+  .container { padding: 28px 16px 80px; }
+  .header { margin-bottom: 32px; }
+  .header h1 { font-size: 26px; }
+}
+
+/* ===== Tool Card ===== */
+.tool-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+  display: block;
+}
+
+.tool-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tool-card.mobile::before  { background: radial-gradient(ellipse 80% 60% at 30% 20%, var(--accent-glow) 0%, transparent 70%); }
+.tool-card.desktop::before { background: radial-gradient(ellipse 80% 60% at 70% 20%, var(--green-glow) 0%, transparent 70%); }
+
+.tool-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: rgba(21,88,167,0.3);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(21,88,167,0.08);
+}
+.tool-card:hover::before { opacity: 1; }
+.tool-card:active { transform: scale(0.98); }
+
+/* Recommended badge */
+.card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.card-badge.mobile-badge  { background: rgba(21,88,167,0.10); color: var(--accent); border: 1px solid rgba(21,88,167,0.25); }
+.card-badge.desktop-badge { background: rgba(26,117,201,0.10); color: var(--accent2); border: 1px solid rgba(26,117,201,0.25); }
+
+/* Icon */
+.card-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.tool-card.mobile .card-icon  { background: rgba(21,88,167,0.10); }
+.tool-card.desktop .card-icon { background: rgba(26,117,201,0.10); }
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* Feature list */
+.card-features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.feature-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tool-card.mobile .feature-dot  { background: var(--accent); }
+.tool-card.desktop .feature-dot { background: var(--accent2); }
+
+/* CTA Button */
+.card-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.tool-card.mobile .card-cta  { background: rgba(21,88,167,0.08); color: var(--accent); }
+.tool-card.desktop .card-cta { background: rgba(26,117,201,0.08); color: var(--accent2); }
+.tool-card:hover .card-cta   { filter: brightness(1.1); }
+
+.card-cta .arrow {
+  font-size: 16px;
+  transition: transform 0.15s;
+}
+.tool-card:hover .card-cta .arrow { transform: translateX(4px); }
+
+/* Version tag */
+.card-version {
+  position: absolute;
+  top: 20px; right: 20px;
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 500;
+}
+
+/* ===== Stats Row ===== */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+}
+
+.stat-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+}
+
+/* ===== Instructions Panel ===== */
+.instruction-panel {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+
+.panel-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-toggle {
+  font-size: 12px;
+  color: var(--text3);
+  transition: transform 0.25s;
+}
+
+.panel-body {
+  padding: 20px;
+  display: none;
+}
+
+.panel-body.open { display: block; }
+
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.step-num {
+  width: 22px; height: 22px;
+  background: rgba(45,130,245,0.15);
+  color: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.step-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+.step-text .hl { color: var(--accent); font-weight: 600; }
+
+/* ===== Footer ===== */
+.footer {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.footer p {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 2;
+}
+
+/* ===== Iframe Modal ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(10,30,60,0.75);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-overlay.active { display: flex; flex-direction: column; }
+
+@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+@keyframes slideIn { from { transform: translateY(20px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+
+.modal-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.97);
+  border-bottom: 1px solid rgba(21,88,167,0.12);
+  flex-shrink: 0;
+  animation: slideIn 0.25s ease;
+}
+
+.modal-title-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-title-bar .mode-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 5px;
+}
+
+.mode-badge.mobile-mode  { background: rgba(21,88,167,0.12); color: var(--accent); }
+.mode-badge.desktop-mode { background: rgba(26,117,201,0.12); color: var(--accent2); }
+
+.modal-title-bar span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.modal-close {
+  background: rgba(21,88,167,0.08);
+  border: none;
+  color: var(--text2);
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.modal-close:hover { background: rgba(21,88,167,0.16); color: var(--accent); }
+.modal-close:active { transform: scale(0.9); }
+
+.modal-iframe-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-iframe-wrap iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.iframe-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  gap: 16px;
+  font-size: 14px;
+  color: var(--text2);
+}
+
+.loading-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid rgba(21,88,167,0.12);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Responsive: modal full-screen on mobile ===== */
+@media (max-width: 768px) {
+  .modal-topbar { padding: 10px 14px; }
+}
+
+/* ===== Switch between iframe sizes on desktop ===== */
+.modal-overlay.desktop-mode .modal-iframe-wrap { /* full width by default */ }
+
+/* ===== Shimmer animation for cards on load ===== */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>💊 库存管理<span class="highlight">看板</span></h1>
+    <p>支持 Excel 上传，自动计算库龄与近效期预警<br>多维度筛选分析，掌握门店库存全貌</p>
+    <div class="device-tip" id="deviceTip" style="display:none;"></div>
+  </div>
+
+  <!-- Cards Grid -->
+  <div class="cards-grid">
+
+    <!-- Mobile Card -->
+    <div class="tool-card mobile" onclick="openTool('mobile')" role="button" tabindex="0">
+      <span class="card-version">v4.0</span>
+      <div class="card-badge mobile-badge">
+        <span>📱</span> 手机端
+      </div>
+      <div class="card-icon">📱</div>
+      <div class="card-title">手机版看板</div>
+      <div class="card-desc">专为移动设备优化，卡片式布局，支持在库天数直读字段</div>
+      <div class="card-features">
+        <div class="feature-item"><span class="feature-dot"></span>卡片式浏览，触控友好</div>
+        <div class="feature-item"><span class="feature-dot"></span>在库天数直接读取Excel字段</div>
+        <div class="feature-item"><span class="feature-dot"></span>底部筛选浮层，下拉无限加载</div>
+        <div class="feature-item"><span class="feature-dot"></span>概览图表 + 明细双标签页</div>
+      </div>
+      <div class="card-cta">
+        <span>立即打开</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+
+    <!-- Desktop Card -->
+    <div class="tool-card desktop" onclick="openTool('desktop')" role="button" tabindex="0">
+      <span class="card-version">v2.0</span>
+      <div class="card-badge desktop-badge">
+        <span>🖥️</span> 桌面端
+      </div>
+      <div class="card-icon">🖥️</div>
+      <div class="card-title">桌面版看板</div>
+      <div class="card-desc">全屏表格式展示，列排序、列宽调整，数据分析更高效</div>
+      <div class="card-features">
+        <div class="feature-item"><span class="feature-dot"></span>全功能数据表格，支持列排序</div>
+        <div class="feature-item"><span class="feature-dot"></span>双图表联动，点击柱状图筛选</div>
+        <div class="feature-item"><span class="feature-dot"></span>多维度筛选：部门/计划员/采购员</div>
+        <div class="feature-item"><span class="feature-dot"></span>一键导出CSV，自定义显示条数</div>
+      </div>
+      <div class="card-cta">
+        <span>立即打开</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Instructions Panel -->
+  <div class="instruction-panel">
+    <div class="panel-header" onclick="togglePanel()">
+      <h3>📋 使用说明 · 如何上传数据</h3>
+      <span class="panel-toggle" id="panelToggle">▼</span>
+    </div>
+    <div class="panel-body" id="panelBody">
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-text">进入 <span class="hl">POS系统</span>，查询当前保管账</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-text">筛选保管账ID对应药店（支持 <span class="hl">多选</span>），同时勾选<span class="hl">「在库天数」</span>字段导出</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-text">导出 <span class="hl">门店保管账Excel</span> 文件到本地或微信传输</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-text">选择上方任一看板，点击「选择文件」上传Excel，即可自动生成分析报表</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>
+      手机版 v4.0 · 桌面版 v2.0<br>
+      在库天数分类：≤1月 / 1-3月 / 3-6月 / 6月以上 · 近效期预警：已过期 / ≤1月 / 1-3月 / 3-6月<br>
+      数据来源：POS导出Excel
+    </p>
+  </div>
+
+</div>
+
+<!-- Full-screen Iframe Modal -->
+<div class="modal-overlay" id="toolModal">
+  <div class="modal-topbar">
+    <div class="modal-title-bar">
+      <span class="mode-badge" id="modalModeBadge"></span>
+      <span id="modalTitleText"></span>
+    </div>
+    <button class="modal-close" onclick="closeTool()" title="关闭">✕</button>
+  </div>
+  <div class="modal-iframe-wrap">
+    <div class="iframe-loading" id="iframeLoading">
+      <div class="loading-spinner"></div>
+      <span>正在加载看板...</span>
+    </div>
+    <iframe id="toolIframe" src="" onload="onIframeLoaded()"></iframe>
+  </div>
+</div>
+
+<script>
+/* ===== Device Detection ===== */
+function isMobile() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Show device recommendation tip
+  var tip = document.getElementById('deviceTip');
+  if (isMobile()) {
+    tip.innerHTML = '📱 检测到手机端，推荐使用「手机版看板」获得最佳体验';
+    tip.style.display = 'inline-flex';
+    // Highlight mobile card
+    document.querySelector('.tool-card.mobile').style.borderColor = 'rgba(45,130,245,0.4)';
+  } else {
+    tip.innerHTML = '🖥️ 检测到桌面端，推荐使用「桌面版看板」获得最佳体验';
+    tip.style.display = 'inline-flex';
+    tip.style.background = 'rgba(61,214,140,0.1)';
+    tip.style.borderColor = 'rgba(61,214,140,0.25)';
+    tip.style.color = '#3dd68c';
+    // Highlight desktop card
+    document.querySelector('.tool-card.desktop').style.borderColor = 'rgba(61,214,140,0.4)';
+  }
+});
+
+/* ===== Instructions Toggle ===== */
+function togglePanel() {
+  var body = document.getElementById('panelBody');
+  var toggle = document.getElementById('panelToggle');
+  if (body.classList.contains('open')) {
+    body.classList.remove('open');
+    toggle.textContent = '▼';
+    toggle.style.transform = 'rotate(0deg)';
+  } else {
+    body.classList.add('open');
+    toggle.textContent = '▲';
+    toggle.style.transform = 'rotate(0deg)';
+  }
+}
+
+/* ===== Tool Opener ===== */
+function openTool(type) {
+  var modal = document.getElementById('toolModal');
+  var iframe = document.getElementById('toolIframe');
+  var loading = document.getElementById('iframeLoading');
+  var badge = document.getElementById('modalModeBadge');
+  var title = document.getElementById('modalTitleText');
+
+  loading.style.display = 'flex';
+  iframe.style.opacity = '0';
+
+  if (type === 'mobile') {
+    badge.textContent = '📱 手机版 v4.0';
+    badge.className = 'mode-badge mobile-mode';
+    title.textContent = '保管账库存管理看板（手机版）';
+    iframe.src = '保管账库存管理看板_v4.0.html';
+  } else {
+    badge.textContent = '🖥️ 桌面版 v2.0';
+    badge.className = 'mode-badge desktop-mode';
+    title.textContent = '保管账库存管理看板（桌面版）';
+    iframe.src = '保管账库存看板_桌面版_v2.0.html';
+  }
+
+  modal.classList.add('active');
+  // Prevent body scroll
+  document.body.style.overflow = 'hidden';
+}
+
+function onIframeLoaded() {
+  var loading = document.getElementById('iframeLoading');
+  var iframe = document.getElementById('toolIframe');
+  loading.style.display = 'none';
+  iframe.style.opacity = '1';
+  iframe.style.transition = 'opacity 0.3s ease';
+}
+
+function closeTool() {
+  var modal = document.getElementById('toolModal');
+  var iframe = document.getElementById('toolIframe');
+  modal.classList.remove('active');
+  document.body.style.overflow = '';
+  // Reset iframe after close to free memory
+  setTimeout(function() { iframe.src = ''; }, 300);
+}
+
+// Close on ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeTool();
+});
+
+// Keyboard accessibility for cards
+document.querySelectorAll('.tool-card').forEach(function(card) {
+  card.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      card.click();
+    }
+  });
+});
+</script>
+</body>
+</html>
