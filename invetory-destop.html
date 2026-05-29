@@ -424,14 +424,9 @@ function processInventoryData(records, mapping) {
       row['距离失效天数'] = null;
     }
 
-    // Calculate 在库天数 (use 入库日期 if available, else 生产日期)
-    const inDate = parseDate(r['入库日期']) || prodDate;
-    if (inDate) {
-      const diff = today.getTime() - inDate.getTime();
-      row['在库天数'] = Math.floor(diff / 86400000);
-    } else {
-      row['在库天数'] = null;
-    }
+    // 在库天数 - 直接读取Excel字段
+    var inStorageDays = parseFloat(r['在库天数']);
+    row['在库天数'] = (!isNaN(inStorageDays)) ? inStorageDays : null;
 
     // Categorize 距离失效分类
     const ed = row['距离失效天数'];
