@@ -491,14 +491,15 @@ function dedupByBatch(recs) {
     var key = itemId + '|||' + batchNo;
     if (!seen[key]) {
       seen[key] = { idx: result.length, rec: {} };
-      // 深拷贝第一条记录
+      // 深拷贝第一条记录，数量和金额先置为0，统一由下方累加逻辑处理
       Object.keys(r).forEach(function(k) { seen[key].rec[k] = r[k]; });
+      seen[key].rec['数量'] = 0;
+      seen[key].rec['品种价格参考'] = 0;
       result.push(seen[key].rec);
     }
-    // 累加数量
+    // 累加数量和金额（对第一条和后续条统一处理，避免双重计算）
     var merged = seen[key].rec;
     merged['数量'] = (parseFloat(merged['数量'])||0) + (parseFloat(r['数量'])||0);
-    // 累加品种价格参考
     merged['品种价格参考'] = Math.round(((parseFloat(merged['品种价格参考'])||0) + (parseFloat(r['品种价格参考'])||0)) * 100) / 100;
   });
   return result;
